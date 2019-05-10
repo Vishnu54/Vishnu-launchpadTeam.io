@@ -163,7 +163,20 @@ body {
   overflow-y: scroll; 
   overflow: -moz-scrollbars-none; 
   -ms-overflow-style: none; 
+  overflow: hidden;
 }
+
+
+@-webkit-keyframes move {
+  0% {
+    margin-top: -400px; 
+  }
+  100% {
+    margin-bottom : 800px; 
+  }
+}
+
+#zone-two-events::-webkit-scrollbar { width: 0 !important }
 
 .event-halve{
   width:100%; 
@@ -172,9 +185,14 @@ body {
   height: 45%; 
   margin-top:5px; 
   margin-bottom: 5px; 
+
+  -webkit-animation-name: move;
+  -webkit-animation-duration: 8s;
+  -webkit-animation-iteration-count: infinite;
+  -webkit-animation-direction: initial;
+  -webkit-animation-timing-function: linear;
 }
 
-#zone-two-events::-webkit-scrollbar { width: 0 !important }
 
 .event-full{
   width:100%; 
