@@ -1,6 +1,23 @@
+
 Date.prototype.addHours = function(h) {    
   this.setTime(this.getTime() + (h*60*60*1000)); 
   return this;   
+}
+
+function getFutureEvents(events) {
+  let timeNow = new Date(Date.now()); 
+
+  let futureEvents = [];  
+
+  events.forEach(function(event){
+    let start = event.start.dateTime; 
+
+    if(start > timeNow){
+      futureEvents.push(event); 
+    } 
+  })
+  
+  return futureEvents;
 }
 
 Date.minutesBetween = function( date1, date2 ) {
@@ -16,9 +33,18 @@ Date.minutesBetween = function( date1, date2 ) {
   return (difference_ms)/60000; 
 }
 
+function timeToString(date){
+  let timeNow = date.getHours() + ':'+date.getMinutes(); 
+
+  if(date.getMinutes() < 10) {
+    timeNow = date.getHours() + ':0'+date.getMinutes();
+  }
+  return timeNow; 
+}
+
 function returnZoneTwoEvent(event) {
-  let startTime = event.start.dateTime.getHours() + ':'+event.start.dateTime.getMinutes()+'0'; 
-  let endTime = event.end.dateTime.getHours() + ':'+event.end.dateTime.getMinutes()+'0'; 
+  let startTime = timeToString(event.start.dateTime);  
+  let endTime = timeToString(event.end.dateTime);
 
   let eventSubject = document.createElement('h1'); 
   eventSubject.textContent = event.subject; 
@@ -52,6 +78,17 @@ $(function() {
     render('#unsupportedbrowser');
     return;
   }
+
+  
+  $('#nav-container').hover(
+    function(){
+      $("#nav-child").show();
+    },
+    function(){
+      $("#nav-child").hide();
+    }
+
+  )
   
   render(window.location.hash);
 
@@ -136,6 +173,9 @@ $(function() {
       // Redirect to home page
       window.location.hash = '#';
     }
+
+
+  
   }
 
   function setActiveNav(navId) {
@@ -209,15 +249,13 @@ function hideAll(){
         events = getTodayEvents(events); 
         event_map = parseEvents(events);
 
-        let date = new Date(Date.now()); 
-       
-        if(date.getMinutes() < 10) {
-          let timeNow = date.getHours() + ':0'+date.getMinutes();
-          console.log('timeNow: '+timeNow); 
-          $('#timer').html(timeNow);
-        } 
+        let date = new Date(Date.now());
         let timeNow = date.getHours() + ':'+date.getMinutes(); 
 
+        if(date.getMinutes() < 10) {
+          timeNow = date.getHours() + ':0'+date.getMinutes();
+        } 
+        
         $('#timer').html(timeNow);
         renderMap(event_map); 
       }
@@ -237,19 +275,21 @@ function hideAll(){
         console.log(events)
         events = parseEventTime(events);
         events = getTodayEvents(events);
+        events = getFutureEvents(events); 
 
         eventsHTML = []
         events.forEach(function(event){
           eventsHTML.push(returnZoneTwoEvent(event))
         });
 
+        $('#zone-two-events').empty(); 
+
         if (eventsHTML.length < 1) {
-          console.log('Hi!'); 
           let newEl = $(document.createElement('div'))
           newEl.addClass('event-full');
-          newEl.html('To find out how to create, collaborate and connect in this new space,' 
-          +' email the Launchpad team at <span style="color:red">launchpad@murdoch.edu.au</span>').css({'text-align': 'center', 
-          'font-weight':'bold'}); 
+          newEl.html('<span style="position:relative; top:30%; left:0; width:100%;">To find out how to create, collaborate and connect in this new space,' 
+          +' email the Launchpad team at <span style="color:red">launchpad@murdoch.edu.au</span></span>').css({'text-align': 'center', 
+          'font-weight':'bold', 'font-size':'24px'}); 
           $('#zone-two-events').append(newEl); 
         }
         else if(eventsHTML.length === 1) {
@@ -257,10 +297,19 @@ function hideAll(){
           newEl.addClass('event-full');
           $('#zone-two-events').append(newEl);
         } else{
+          let par = document.createElement('div');
+          $(par).addClass('slide-show'); 
+          $('#zone-two-events').append(par);
           eventsHTML.forEach(function(newEl){
-            newEl.addClass('event-halve');
-            $('#zone-two-events').append(newEl);
+            newEl.addClass('event-full');
+            $(par).append(newEl); 
           })
+          $('.slide-show').slick(
+            {
+              autoplay: true,
+              autoplaySpeed: 2000,
+            }
+          );
         }
 
         /*$('#calendar-status').text('Here are the events on your calendar.');
@@ -296,7 +345,7 @@ function renderMap(event_map){
   ["B1", "b1-zone"], 
   ["B2", "b2-zone"], 
   ["B3", "b3-zone"], 
-  ["C", "c-zone"], 
+  ["C", "zone-three"], 
   ["A_PLUS", "aplus-zone"]
  ]) 
 
@@ -334,6 +383,7 @@ function parseEvents(events){
   let out = new Map();
 
   for (let event of events){
+    event.location.displayName = event.location.displayName.trim().toUpperCase();  
     let a_location = event.location.displayName;
 
     if (locations.includes(a_location)){
@@ -366,7 +416,7 @@ function getTodayEvents(events) {
 
   events.forEach(function(event){
     let start = event.start.dateTime; 
-    if(start > today && start < tommorrow) { 
+    if(start > today && start < tommorrow && event.subject.indexOf("Canceled") === -1) { 
       eventsToday.push(event); 
     }
   })
